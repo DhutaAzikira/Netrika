@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        form { display: flex; flex-direction: column; max-width: 300px; gap: 10px; }
+        input { padding: 8px; }
+        button { padding: 10px; cursor: pointer; }
+        #message { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Login to Your Account</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success" style="color: green;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form id="login-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="message"></div>
+    <a href="/register/">Don't have an account? Sign Up</a>
+
+<script>
+    const form = document.getElementById('login-form');
+    const messageDiv = document.getElementById('message');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        console.log('Sending login data:', data);
+
+        try {
+            const response = await fetch('/api/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                console.log('Login successful:', result);
+
+                // This is the most important part:
+                // We save the token in the browser's local storage.
+                // This is how we "remember" that the user is logged in.
+                localStorage.setItem('authToken', result.token);
+
+                messageDiv.style.color = 'green';
+                messageDiv.innerText = 'Login successful! Redirecting to dashboard...';
+
+                // We will create the /dashboard/ page next
+                setTimeout(() => {
+                    window.location.href = '/dashboard/';
+                }, 1500);
+
+            } else {
+                console.error('Login failed:', result);
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = 'Error: Invalid credentials. Please try again.';
+            }
+        } catch (error) {
+            console.error('An unexpected network error occurred:', error);
+            messageDiv.style.color = 'red';
+            messageDiv.innerText = 'A network error occurred. Please try again.';
+        }
+    });
+</script>
+</body>
+</html>

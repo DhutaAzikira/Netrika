@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        form { display: flex; flex-direction: column; max-width: 300px; gap: 10px; }
+        input { padding: 8px; }
+        button { padding: 10px; cursor: pointer; }
+        #message { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Register for an Account</h1>
+    <form id="register-form">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div id="message"></div>
+    <a href="/login/">Already have an account? Log In</a>
+
+<script>
+    const form = document.getElementById('register-form');
+    const messageDiv = document.getElementById('message');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Stop the form from submitting the traditional way
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        console.log('Sending registration data:', data);
+
+        try {
+            const response = await fetch('/api/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // We need to get the CSRF token to make a POST request
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                console.log('Registration successful:', result);
+                messageDiv.style.color = 'green';
+                messageDiv.innerText = 'Registration successful! You can now log in.';
+                // Redirect to login page after a short delay
+                setTimeout(() => {
+                    window.location.href = '/login/';
+                }, 2000);
+            } else {
+                // Display errors from the server
+                console.error('Registration failed:', result);
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = 'Error: ' + JSON.stringify(result);
+            }
+        } catch (error) {
+            console.error('An unexpected network error occurred:', error);
+            messageDiv.style.color = 'red';
+            messageDiv.innerText = 'A network error occurred. Please try again.';
+        }
+    });
+</script>
+</body>
+</html>

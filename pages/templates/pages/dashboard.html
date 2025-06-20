@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+        .actions a button, .actions button { padding: 15px; font-size: 16px; margin: 10px; cursor: pointer; border: 1px solid #ccc; background-color: #f0f0f0; text-decoration: none; color: black; }
+        a { text-decoration: none; }
+        #message { margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #f2f2f2; }
+        .start-btn { background-color: #28a745; color: white; border: none; padding: 8px 12px; cursor: pointer; }
+        .start-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <h1 id="welcome-message">Loading...</h1>
+    <p>You can submit a new application for screening or start a pending interview below.</p>
+    <hr>
+
+    <div class="actions">
+        <a href="/screener/"><button>Submit New Application for Screening</button></a>
+        <button id="logout-btn">Logout</button>
+    </div>
+
+    <hr>
+
+    <h2>Your Screenings & Interviews</h2>
+    <div id="interview-list-container">
+        <p>Fetching your interview history...</p>
+    </div>
+
+<script>
+    // This self-invoking function runs as soon as the page loads
+    (async function() {
+        const token = localStorage.getItem('authToken');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const interviewListContainer = document.getElementById('interview-list-container');
+
+        if (!token) {
+            window.location.href = '/login/';
+            return;
+        }
+
+        try {
+            // Fetch the user's data and list of interviews
+            const response = await fetch('/api/dashboard-data/', {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+
+            if (!response.ok) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login/';
+                return;
+            }
+
+            const data = await response.json();
+            welcomeMessage.innerText = `Welcome, ${data.username}!`;
+
+            let tableHtml = '<p>You have no past interview sessions.</p>';
+            if (data.interviews && data.interviews.length > 0) {
+                tableHtml = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Status</th>
+                                <th>Date Created</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.interviews.map(interview => `
+                                <tr>
+                                    <td>${interview.position || 'N/A'}</td>
+                                    <td>${interview.status || 'N/A'}</td>
+
+                                    <td>
+                                        ${interview.status === 'Scheduled'
+                                            ? `<button class="start-btn" ">Start Live Interview</button>`
+                                            : `<span>Completed</span>`
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            interviewListContainer.innerHTML = tableHtml;
+
+        } catch (error) {
+            console.error('Failed to fetch dashboard data:', error);
+            interviewListContainer.innerHTML = '<p style="color: red;">Could not load interview data.</p>';
+        }
+    })();
+
+    // --- Event Listeners for Buttons ---
+    document.body.addEventListener('click', (event) => {
+        // Handle clicks on any "Start" button in the list
+        if (event.target && event.target.matches('button.start-btn')) {
+            const sessionId = event.target.dataset.sessionId;
+            if (sessionId) {
+                console.log(`Handoff to FastAPI with sessionId: ${sessionId}`);
+                // Redirect to the FastAPI interview page with the specific session ID
+                window.location.href = `http://localhost:8000/?sessionId=${sessionId}`;
+            }
+        }
+
+        // Handle click on the logout button
+        if (event.target && event.target.id === 'logout-btn') {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login/';
+        }
+    });
+</script>
+</body>
+</html>

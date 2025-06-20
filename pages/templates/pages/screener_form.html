@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Screener Submission</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: auto; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        input, textarea, select { padding: 8px; font-size: 14px; }
+        button { padding: 10px; cursor: pointer; }
+        #message { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>AI Screener Form</h1>
+
+    <div id="message"></div>
+
+    <form id="screener-form">
+        <p>
+            <label for="Name">Name:</label><br>
+            <input type="text" id="Name" name="Name" value="{{ user.get_full_name|default:user.username }}">
+        </p>
+        <p>
+            <label for="Position">Position Applied For:</label><br>
+            <input type="text" id="Position" name="Position" value="Graphic Designer">
+        </p>
+        <p>
+            <label for="JobDescription">Job Description:</label><br>
+            <textarea id="JobDescription" name="JobDescription" rows="4" cols="50">PT Desain Cepat Solusi is looking for a talented and creative Graphic Designer</textarea>
+        </p>
+        <p>
+            <label for="data">CV/Resume (PDF):</label><br>
+            <input type="file" id="data" name="data" accept=".pdf" required>
+        </p>
+
+        <!-- The schedule input is now a dropdown -->
+        <p>
+            <label for="schedule_id">Select an Available Schedule:</label><br>
+            <select id="schedule_id" name="schedule_id" required>
+                <option value="">Loading schedules...</option>
+            </select>
+        </p>
+
+        <hr>
+        <button type="submit">Submit for Screening</button>
+    </form>
+    <a href="/dashboard/">Back to Dashboard</a>
+
+<script>
+    const form = document.getElementById('screener-form');
+    const messageDiv = document.getElementById('message');
+    const scheduleSelect = document.getElementById('schedule_id');
+    const token = localStorage.getItem('authToken');
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // --- Main Logic ---
+    // Self-invoking async function to protect the page and fetch schedules
+    (async function() {
+        if (!token) {
+            window.location.href = '/login/';
+            return;
+        }
+
+        // Fetch the available schedules
+        try {
+            const response = await fetch('/api/get-schedules/', {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            if (!response.ok) throw new Error('Could not fetch schedules.');
+
+            const schedules = await response.json();
+
+            // Clear the "Loading..." option
+            scheduleSelect.innerHTML = '';
+
+            if (schedules.length > 0) {
+                // Add a default "please select" option
+                scheduleSelect.add(new Option('Please select a time slot', ''));
+
+                // Populate the dropdown with the fetched schedules
+                schedules.forEach(schedule => {
+                    const displayText = `${schedule.date} at ${schedule.start_time} - ${schedule.end_time}`;
+                    const option = new Option(displayText, schedule.id);
+                    scheduleSelect.add(option);
+                });
+            } else {
+                scheduleSelect.add(new Option('No available schedules found', ''));
+            }
+
+        } catch (error) {
+            console.error('Failed to load schedules:', error);
+            scheduleSelect.innerHTML = '<option value="">Error loading schedules</option>';
+        }
+    })();
+
+
+    // Form submission listener
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        messageDiv.innerText = 'Submitting, please wait...';
+        messageDiv.style.color = 'black';
+
+        const formData = new FormData(form);
+
+        if (!token) {
+            messageDiv.innerText = 'Authentication error. Please log in again.';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/submit-screener/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${token}`,
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                messageDiv.style.color = 'green';
+                messageDiv.innerText = result.message + " Redirecting back to dashboard...";
+                setTimeout(() => { window.location.href = '/dashboard/'; }, 2000);
+            } else {
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = 'Error: ' + (result.error || JSON.stringify(result));
+            }
+        } catch (error) {
+            messageDiv.style.color = 'red';
+            messageDiv.innerText = 'A network error occurred. Please try again.';
+        }
+    });
+</script>
+</body>
+</html>
