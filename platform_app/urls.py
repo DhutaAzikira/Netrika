@@ -7,6 +7,6 @@ urlpatterns = [
     path('login/', obtain_auth_token, name='login-api'), # Add this line.
     path('submit-screener/', views.submit_screener_api, name='submit-screener-api'),
     path('dashboard-data/', views.dashboard_data_api, name='dashboard-data-api'),
-path('get-schedules/', views.get_schedules_api, name='get-schedules-api'),
+    path('get-schedules/', views.get_schedules_api, name='get-schedules-api'),
 
 ]

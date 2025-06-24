@@ -58,6 +58,8 @@
             }
 
             const data = await response.json();
+            userData = data;
+
             welcomeMessage.innerText = `Welcome, ${data.username}!`;
 
             let tableHtml = '<p>You have no past interview sessions.</p>';
@@ -99,14 +101,25 @@
     })();
 
     // --- Event Listeners for Buttons ---
+    const logoutBtn = document.getElementById('logout-btn');
+    const interviewList = document.getElementById('interview-list');
+
+    // --- Event Listeners for Buttons ---
     document.body.addEventListener('click', (event) => {
         // Handle clicks on any "Start" button in the list
         if (event.target && event.target.matches('button.start-btn')) {
-            const sessionId = event.target.dataset.sessionId;
-            if (sessionId) {
-                console.log(`Handoff to FastAPI with sessionId: ${sessionId}`);
-                // Redirect to the FastAPI interview page with the specific session ID
-                window.location.href = `http://localhost:8000/?sessionId=${sessionId}`;
+            // Get the user's email, which is available from the logged-in user object
+            // passed into the template by the Django view.
+            const userEmail = userData.email;
+
+            if (userEmail) {
+                console.log(`Handoff to FastAPI using user email as session ID: ${userEmail}`);
+
+                // Redirect directly to the FastAPI interview page, passing the email
+                // in a query parameter named 'sessionId'.
+                window.location.href = `http://localhost:8000/?sessionId=${userEmail}`;
+            } else {
+                alert('Error: User email not found. Cannot start interview.');
             }
         }
 

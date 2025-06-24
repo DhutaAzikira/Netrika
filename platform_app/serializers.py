@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from platform_app.models import Interview, Schedule
+from platform_app.models import Interviews, Schedules, UserProfiles
 from rest_framework import serializers, validators
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -37,13 +37,17 @@ class InterviewSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True) # Use the nested serializer for the user field
 
     class Meta:
-        model = Interview
+        model = Interviews
         fields = '__all__'
-
 
 
 # Add this new serializer at the bottom
 class ScheduleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Schedule
-        fields = ['id', 'date', 'start_time', 'end_time']
+        model = Schedules
+        fields = ['id', 'start_time', 'end_time']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfiles
+        fields = '__all__'

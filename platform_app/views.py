@@ -1,16 +1,15 @@
+import profile
+
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import render
 import requests
 from PlatformInterview import settings
-from .serializers import RegisterSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Interview # Make sure to import your Interview model
-from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer
-# Add your Interview model to the imports
-from .models import Interview, Schedule
+from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer, UserProfileSerializer
+from .models import Interviews, Schedules, UserProfiles
+
 
 @api_view(['POST'])
 def register_api(request):
@@ -26,17 +25,10 @@ def register_api(request):
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# Replace your existing submit_screener_api function with this one
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def submit_screener_api(request):
-    """
-    This is the final version of the screener submission API.
-    It receives form data, adds the user's ID, and forwards it all to n8n.
-    """
     try:
         # 1. Get the securely authenticated user from the request token.
         user = request.user
@@ -48,8 +40,8 @@ def submit_screener_api(request):
 
         # 3. (Good practice) Look up the actual Schedule object to make sure it's valid.
         try:
-            schedule_object = Schedule.objects.get(pk=schedule_id)
-        except Schedule.DoesNotExist:
+            schedule_object = Schedules.objects.get(pk=schedule_id)
+        except Schedules.DoesNotExist:
             return Response({"error": "The selected schedule is not valid."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 4. Prepare the data payload for n8n, now including both IDs.
@@ -82,7 +74,7 @@ def submit_screener_api(request):
         session_id = n8n_data.get('sessionId')  # Get the live session ID from n8n
 
         # 7. Create the official Interview record in our database, linking user and schedule.
-        Interview.objects.create(
+        Interviews.objects.create(
             user=user,
             schedule=schedule_object,
             session_id=session_id,
@@ -99,35 +91,47 @@ def submit_screener_api(request):
         return Response({'error': f"An unexpected error occurred: {str(e)}"}, status=500)
 
 
-# ... inside your dashboard_data_api view ...
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dashboard_data_api(request):
     user = request.user
+    try:
+        user_profile = UserProfiles.objects.get(user=user)
 
-    # The query to get interviews remains the same
-    interviews = Interview.objects.filter(user=user)
+        user_profile_serializer = UserProfileSerializer(user_profile)
+        profile_data = user_profile_serializer.data
+
+        print(user)
+        print(f"User profile data: {profile_data}")
+        print(f"User data: {user_profile}")
+
+
+    except UserProfiles.DoesNotExist:
+        return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    interviews = Interviews.objects.filter(user_profile=user_profile)
     interview_serializer = InterviewSerializer(interviews, many=True)
 
-    # The fix is here: We now construct the data dictionary so that 'username'
-    # is always included, regardless of whether the 'interviews' list is empty.
     data = {
+        'user_id': user_profile.id,
         'username': user.username,
+        'full_name': user_profile.full_name,
+        'phone_number': user_profile.phone_number,
+        'email': user_profile.email,
+        'date_of_birth': user_profile.date_of_birth,
+        'sex': user_profile.sex,
         'interviews': interview_serializer.data
     }
+
+
     return Response(data)
 
-# Add this new view at the bottom
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_schedules_api(request):
-    """
-    Fetches all available schedules from the database.
-    """
     try:
-        # For now, we get all schedules. Later, you could filter for future dates.
-        schedules = Schedule.objects.all()
+        schedules = Schedules.objects.all()
         serializer = ScheduleSerializer(schedules, many=True)
         return Response(serializer.data)
     except Exception as e:

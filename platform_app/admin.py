@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Answer, Evaluation, Interview, InterviewQuestion, Schedule, Result
+from .models import Answers, Evaluations, Interviews, Questions, Schedules, Results
 
-# This will make each of your database tables manageable from the admin page
-admin.site.register(Answer)
-admin.site.register(Evaluation)
-admin.site.register(Interview)
-admin.site.register(InterviewQuestion)
-admin.site.register(Schedule)
-admin.site.register(Result)
+admin.site.register(Answers)
+admin.site.register(Evaluations)
+admin.site.register(Interviews)
+admin.site.register(Schedules)
+admin.site.register(Questions)
+admin.site.register(Results)
+
