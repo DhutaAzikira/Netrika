@@ -29,66 +29,73 @@ def register_api(request):
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def submit_screener_api(request):
+    user = request.user
+
     try:
-        # 1. Get the securely authenticated user from the request token.
-        user = request.user
+        user_profile = UserProfiles.objects.get(user=user)
+    except UserProfiles.DoesNotExist:
+        return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # 2. Get the chosen schedule_id from the form data sent by the JavaScript.
-        schedule_id = request.data.get('schedule_id')
-        if not schedule_id:
-            return Response({"error": "A schedule_id must be selected."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 3. (Good practice) Look up the actual Schedule object to make sure it's valid.
-        try:
-            schedule_object = Schedules.objects.get(pk=schedule_id)
-        except Schedules.DoesNotExist:
-            return Response({"error": "The selected schedule is not valid."}, status=status.HTTP_400_BAD_REQUEST)
+    schedule_id = request.data.get('schedule_id')
+    date = request.data.get('date')
+    posisi = request.data.get('posisi')
+    industri = request.data.get('industri')
+    nama_perusahaan = request.data.get('nama_perusahaan')
+    tingkatan = request.data.get('tingkatan')
+    jenis_wawancara = request.data.get('jenis_wawancara')
+    detail_pekerjaan = request.data.get('detail_pekerjaan')
+    tier = request.data.get('tier', 'Free')  # Default to 'Free' if not provided
 
-        # 4. Prepare the data payload for n8n, now including both IDs.
-        n8n_data_payload = {
-            'userId': user.id,
-            'scheduleId': schedule_id,
-            'Name': request.data.get('Name'),
-            'Position': request.data.get('Position'),
-            'JobDescription': request.data.get('JobDescription'),
-        }
+    n8n_data_payload = {
+        'user_profile_id': user_profile.id,
+        'schedule_id': schedule_id,
+        'date': date,
+        'posisi': posisi,
+        'industri': industri,
+        'nama_perusahaan': nama_perusahaan,
+        'tingkatan': tingkatan,
+        'jenis_wawancara': jenis_wawancara,
+        'detail_pekerjaan': detail_pekerjaan,
+        'tier': tier,
+    }
 
-        # 5. Prepare the file payload.
-        uploaded_file = request.FILES.get('data')
-        if not uploaded_file:
-            return Response({"error": "CV/Resume file not provided."}, status=status.HTTP_400_BAD_REQUEST)
+    uploaded_file = request.FILES.get('cv')
+    files_payload = {
+        'cv': (uploaded_file.name, uploaded_file.read(), uploaded_file.content_type)
+    }
 
-        files_payload = {
-            'data': (uploaded_file.name, uploaded_file.read(), uploaded_file.content_type)
-        }
+    print(f"Sending data to n8n: {n8n_data_payload}")
+    N8N_SCREENER_URL = "http://localhost:5678/webhook/schedule-interview"
+    n8n_response = requests.post(
+        N8N_SCREENER_URL,
+        data=n8n_data_payload,
+        files=files_payload
+    )
 
-        # 6. Send everything to the n8n scheduling webhook.
-        print(f"Sending data to n8n: {n8n_data_payload}")
-        n8n_response = requests.post(
-            settings.N8N_SCREENER_URL,
-            data=n8n_data_payload,
-            files=files_payload
-        )
-        n8n_response.raise_for_status()
-        n8n_data = n8n_response.json()
-        session_id = n8n_data.get('sessionId')  # Get the live session ID from n8n
+    n8n_response.raise_for_status()
+    n8n_data = n8n_response.json()
 
-        # 7. Create the official Interview record in our database, linking user and schedule.
-        Interviews.objects.create(
-            user=user,
-            schedule=schedule_object,
-            session_id=session_id,
-            position=n8n_data_payload.get('Position'),
-            status="Ready to Start"
-        )
+    print(f"n8n response data: {n8n_data}")
 
-        return Response({"message": "Successfully scheduled interview! Redirecting to dashboard..."},
-                        status=status.HTTP_201_CREATED)
+    response_status = n8n_data['status']
+    message = n8n_data['message']
+    booking_code = n8n_data.get('booking_code')
 
-    except requests.exceptions.RequestException as e:
-        return Response({'error': f"Failed to contact n8n: {e}"}, status=502)
-    except Exception as e:
-        return Response({'error': f"An unexpected error occurred: {str(e)}"}, status=500)
+    if not booking_code:
+        return Response({"error": "Booking code not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+    response = {
+        "status": response_status,
+        "message": message,
+        "booking_code": booking_code
+    }
+
+
+    return Response(response, status=status.HTTP_200_OK)
+
+    ##TODO Error Validations
+
 
 
 @api_view(['GET'])

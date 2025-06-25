@@ -129,10 +129,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-N8N_SCREENER_URL = "http://localhost:5678/webhook-test/schedule-interview"
-# LOGIN_URL = '/login/'
 
-# Add this entire block at the bottom of the file
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
