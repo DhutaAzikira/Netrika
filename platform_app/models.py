@@ -133,3 +133,18 @@ class Results(models.Model):
 
     class Meta:
         db_table = 'results'
+
+class CameraAnalysis(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    interview = models.ForeignKey(Interviews, on_delete=models.CASCADE)
+    multiple_faces = models.CharField(max_length=15, blank=True, null=True)
+    eye_contact = models.CharField(max_length=15, blank=True, null=True)
+    face_visibility = models.CharField(max_length=15, blank=True, null=True)
+    general_expression = models.CharField(max_length=15, blank=True, null=True)
+    camera_quality = models.CharField(max_length=15, blank=True, null=True)
+    camera_perspective = models.CharField(max_length=15, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'camera_analysis'

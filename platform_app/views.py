@@ -1,14 +1,18 @@
 import profile
 
+from django.db.models import Count
+from django.db.models.functions import Coalesce
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status
 import requests
+
 from PlatformInterview import settings
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer, UserProfileSerializer
 from .models import Interviews, Schedules, UserProfiles
+
 
 
 @api_view(['POST'])
@@ -60,13 +64,20 @@ def submit_screener_api(request):
         'tier': tier,
     }
 
+    if any(value is None or value == '' for value in n8n_data_payload.values()):
+        return Response({"error": "Invalid data: Some required fields are missing or empty."},status=status.HTTP_400_BAD_REQUEST)
+
     uploaded_file = request.FILES.get('cv')
     files_payload = {
         'cv': (uploaded_file.name, uploaded_file.read(), uploaded_file.content_type)
     }
 
+    if not uploaded_file:
+        return Response({"error": "CV file is required."}, status=status.HTTP_400_BAD_REQUEST)
+
     print(f"Sending data to n8n: {n8n_data_payload}")
-    N8N_SCREENER_URL = "http://localhost:5678/webhook/schedule-interview"
+
+    N8N_SCREENER_URL = "http://localhost:5678/webhook/schedule-interview"               ##CHANGE TO PRODUCTION RULE
     n8n_response = requests.post(
         N8N_SCREENER_URL,
         data=n8n_data_payload,
@@ -80,7 +91,13 @@ def submit_screener_api(request):
 
     response_status = n8n_data['status']
     message = n8n_data['message']
+    date = n8n_data.get('date')
+    start_time = n8n_data.get('start_time')
+    end_time = n8n_data.get('end_time')
+    posisi = n8n_data.get('posisi')
+    jenis_wawancara = n8n_data.get('jenis_wawancara')
     booking_code = n8n_data.get('booking_code')
+
 
     if not booking_code:
         return Response({"error": "Booking code not found."}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,13 +105,16 @@ def submit_screener_api(request):
     response = {
         "status": response_status,
         "message": message,
+        "date": date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "posisi": posisi,
+        "jenis_wawancara": jenis_wawancara,
         "booking_code": booking_code
     }
 
-
     return Response(response, status=status.HTTP_200_OK)
 
-    ##TODO Error Validations
 
 
 
@@ -136,7 +156,7 @@ def dashboard_data_api(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_schedules_api(request):
+def get_schedules_api(request, date=None):
     try:
         schedules = Schedules.objects.all()
         serializer = ScheduleSerializer(schedules, many=True)
