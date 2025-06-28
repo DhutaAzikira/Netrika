@@ -128,8 +128,21 @@ class Evaluations(models.Model):
 class Results(models.Model):
     interview = models.OneToOneField(Interviews, on_delete=models.DO_NOTHING, primary_key=True)
     final_score = models.IntegerField(blank=True, null=True)
-    result = models.TextField(blank=True, null=True)
+    final_summary = models.TextField(blank=True, null=True)
+    recommendation = models.TextField(blank=True, null=True)
+    strengths = models.TextField(blank=True, null=True)
+    gaps = models.TextField(blank=True, null=True)
+    communication_skills = models.TextField(blank=True, null=True)
+    cognitive_insights = models.TextField(blank=True, null=True)
+    multiple_faces = models.CharField(max_length=15, blank=True, null=True)
+    eye_contact = models.CharField(max_length=15, blank=True, null=True)
+    face_visibility = models.CharField(max_length=15, blank=True, null=True)
+    general_expression = models.CharField(max_length=15, blank=True, null=True)
+    camera_quality = models.CharField(max_length=15, blank=True, null=True)
+    camera_perspective = models.CharField(max_length=15, blank=True, null=True)
+
     generated_at = models.DateTimeField()
+
 
     class Meta:
         db_table = 'results'
