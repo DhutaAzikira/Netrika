@@ -335,23 +335,20 @@ def get_schedules_api(request, date=None):
 @extend_schema(
     summary="Get available interview schedules for a date",
     description="Retrieves all available interview slots for a given date, including the remaining capacity for each slot.",
-    request=inline_serializer(
-        name='AvailableScheduleRequest',
-        fields={'date': serializers.DateField(help_text="Format: YYYY-MM-DD")}
-    ),
+    request=None,  # No request body for GET
     responses={
         200: AvailableScheduleSerializer(many=True),
         400: OpenApiResponse(description="Date field is required or has an invalid format."),
         500: OpenApiResponse(description="An internal server error occurred."),
     }
 )
-@api_view(['POST'])
+@api_view(['GET'])  # Change to GET method
 @permission_classes([IsAuthenticated])
 def get_available_schedules_api(request):
-    target_date_str = request.data.get('date')
+    target_date_str = request.query_params.get('date')  # Get date from query parameters
     if not target_date_str:
         return Response(
-            {"error": "The 'date' field is required in the request body."},
+            {"error": "The 'date' field is required as a query parameter."},
             status=status.HTTP_400_BAD_REQUEST
         )
     try:
@@ -376,6 +373,7 @@ def get_available_schedules_api(request):
             {"error": "An internal server error occurred."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
 
 
 @extend_schema(

@@ -87,25 +87,13 @@ paths:
         '404':
           description: User profile not found.
   /api/get-available-schedules/:
-    post:
-      operationId: api_get_available_schedules_create
+    get:
+      operationId: api_get_available_schedules_list
       description: Retrieves all available interview slots for a given date, including
         the remaining capacity for each slot.
       summary: Get available interview schedules for a date
       tags:
       - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AvailableScheduleRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AvailableScheduleRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AvailableScheduleRequest'
-        required: true
       security:
       - tokenAuth: []
       responses:
@@ -467,15 +455,6 @@ components:
       - booked_sessions
       - id
       - remaining_capacity
-    AvailableScheduleRequest:
-      type: object
-      properties:
-        date:
-          type: string
-          format: date
-          description: 'Format: YYYY-MM-DD'
-      required:
-      - date
     CameraAnalysisSuccess:
       type: object
       properties:
