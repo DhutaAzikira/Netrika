@@ -232,7 +232,7 @@ def user_profile_api(request):
         404: OpenApiResponse(description="User profile not found."),
     }
 )
-@api_view(['PUT', 'PATCH']) #test1
+@api_view(['PUT', 'PATCH']) #test2
 @permission_classes([IsAuthenticated])
 def update_profile_api(request):
     user = request.user
