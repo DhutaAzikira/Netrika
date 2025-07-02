@@ -28,7 +28,9 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    '.ngrok-free.app'
+    '.ngrok-free.app',
+    '188.209.141.229',
+    '.netrikastag.dedyn.io',
 ]
 
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
