@@ -1,7 +1,8 @@
 import os
 import requests
 from datetime import datetime
-from django.db.models import Count, F, Q
+from django.db.models import Count, F, Q, Avg
+from google.genai import types
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -141,7 +142,8 @@ def submit_screener_api(request):
         'tier': tier,
     }
 
-    if any(value is None or value == '' for value in n8n_data_payload.values()):
+    if any(value is None or value == '' for key, value in n8n_data_payload.items()
+           if key != 'nama_perusahaan'):
         return Response({"error": "Invalid data: Some required fields are missing or empty."},
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -183,8 +185,8 @@ def submit_screener_api(request):
         "status": response_status,
         "message": message,
         "date": date,
-        "start_time": start_time,
-        "end_time": end_time,
+        "start_time": start_time[:8],
+        "end_time": end_time[:8],
         "posisi": posisi,
         "jenis_wawancara": jenis_wawancara,
         "booking_code": booking_code
@@ -265,7 +267,9 @@ def interviews_api(request):
     try:
         user_profile = UserProfiles.objects.get(user=user)
         interviews = Interviews.objects.filter(user_profile=user_profile)
+
         serializer = InterviewSerializer(interviews, many=True)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
     except UserProfiles.DoesNotExist:
         return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -286,6 +290,7 @@ def dashboard_data_api(request):
     user = request.user
     try:
         user_profile = UserProfiles.objects.get(user=user)
+
 
         user_profile_serializer = UserProfileSerializer(user_profile)
         profile_data = user_profile_serializer.data
@@ -532,3 +537,81 @@ def get_result_api(request, interview_id):
         return Response({"error": "Interview not found."}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@extend_schema(
+    summary="Get User's Average Interview Score",
+    description="Calculates and returns the average `final_score` across all of the authenticated user's completed interviews.",
+    responses={
+        200: OpenApiResponse(
+            description="The request was successful. The response will either contain the calculated average score or a message indicating no results were found.",
+            response=inline_serializer(
+                name='AverageScoreResponse',
+                fields={
+                    'average_score': serializers.CharField(
+                        help_text="The calculated average score (e.g., '85.50') or '-' if no results exist."
+                    ),
+                    'message': serializers.CharField(
+                        required=False,
+                        help_text="An optional message, typically present when no results are found."
+                    )
+                }
+            )
+        ),
+        404: OpenApiResponse(
+            description="The user's profile could not be found.",
+            response=inline_serializer(
+                name='ErrorResponse',
+                fields={'error': serializers.CharField()}
+            )
+        ),
+    }
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_average_score_api(request):
+    user = request.user
+    try:
+        user_profile = UserProfiles.objects.get(user=user)
+    except UserProfiles.DoesNotExist:
+        return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    average_score = Results.objects.filter(interview__user_profile=user_profile).aggregate(
+        average_score=Avg('final_score')
+    )['average_score']
+
+    if average_score is None:
+        # No results were found for any of the user's interviews
+        return Response({
+            "message": "No results found for this user.",
+            "average_score": "-"
+        }, status=status.HTTP_200_OK)
+
+    # Format the score to two decimal places for consistency
+    return Response({"average_score": f"{average_score:.2f}"}, status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def analyze_video_api(request):
+    from google import genai
+
+    client = genai.Client(api_key=os.getenv("GOOGLE_GEMINI_API_KEY"))
+
+    video_file_name = "a.mp4"
+    video_bytes = open(video_file_name, 'rb').read()
+
+    response = client.models.generate_content(
+        model='models/gemini-2.0-flash',
+        contents=types.Content(
+            parts=[
+                types.Part(
+                    inline_data=types.Blob(data=video_bytes, mime_type='video/mp4')
+                ),
+                types.Part(text='Please summarize the video in 3 sentences.')
+            ]
+        )
+    )
+    pass

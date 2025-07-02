@@ -4,6 +4,16 @@ info:
   version: 1.0.0
   description: Netrika Gemink
 paths:
+  /api/analyze-video/:
+    post:
+      operationId: api_analyze_video_create
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/google/:
     post:
       operationId: api_auth_google_create
@@ -109,6 +119,30 @@ paths:
           description: Date field is required or has an invalid format.
         '500':
           description: An internal server error occurred.
+  /api/get-average-result/:
+    get:
+      operationId: api_get_average_result_retrieve
+      description: Calculates and returns the average `final_score` across all of
+        the authenticated user's completed interviews.
+      summary: Get User's Average Interview Score
+      tags:
+      - api
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AverageScoreResponse'
+          description: The request was successful. The response will either contain
+            the calculated average score or a message indicating no results were found.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: The user's profile could not be found.
   /api/get-result/{interview_id}:
     get:
       operationId: api_get_result_retrieve
@@ -455,6 +489,19 @@ components:
       - booked_sessions
       - id
       - remaining_capacity
+    AverageScoreResponse:
+      type: object
+      properties:
+        average_score:
+          type: string
+          description: The calculated average score (e.g., '85.50') or '-' if no results
+            exist.
+        message:
+          type: string
+          description: An optional message, typically present when no results are
+            found.
+      required:
+      - average_score
     CameraAnalysisSuccess:
       type: object
       properties:
@@ -462,6 +509,13 @@ components:
           type: string
       required:
       - message
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
     FullInterviewResult:
       type: object
       properties:
@@ -494,6 +548,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/User'
           readOnly: true
+        final_score:
+          type: integer
+          readOnly: true
+          nullable: true
         date:
           type: string
           format: date
@@ -570,6 +628,7 @@ components:
           type: integer
           nullable: true
       required:
+      - final_score
       - id
       - user
     JenisWawancaraEnum:

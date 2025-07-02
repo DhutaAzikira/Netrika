@@ -39,10 +39,13 @@ class InterviewSerializer(serializers.ModelSerializer):
             fields = ['username', 'email']  # Only show these user fields
 
     user = UserSerializer(read_only=True)  # Use the nested serializer for the user field
+    final_score = serializers.IntegerField(source='results.final_score', read_only=True, allow_null=True)
 
     class Meta:
         model = Interviews
         fields = '__all__'
+        extra_fields = ['final_score']
+
 
 
 # Add this new serializer at the bottom
