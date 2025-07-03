@@ -27,4 +27,4 @@ COPY . /app/
 EXPOSE 8001
 
 # Define the command to run your app, pointing to the correct WSGI module
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "PlatformInterview.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "PlatformInterview.wsgi:application"]
