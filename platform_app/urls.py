@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import path, include
 
 from PlatformInterview import settings
 from . import views
@@ -16,6 +16,7 @@ def serve_openapi_schema(request):
     return JsonResponse(data)
 
 urlpatterns = [
+    path ('admin/', include('admin_app.urls')),  # Admin interface
     path('auth/google/', GoogleLogin.as_view(), name='google_login'),
     path('register/', views.register_api, name='register-api'),
     path('login/', obtain_auth_token, name='login-api'),

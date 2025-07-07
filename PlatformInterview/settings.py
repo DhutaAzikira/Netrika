@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
     'platform_app',
     'pages',
+    'admin_app',
 ]
 
 SITE_ID = 1
