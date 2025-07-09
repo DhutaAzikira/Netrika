@@ -32,13 +32,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class InterviewSerializer(serializers.ModelSerializer):
-    # This nested class tells the serializer how to handle related models
     class UserSerializer(serializers.ModelSerializer):
         class Meta:
             model = User
-            fields = ['username', 'email']  # Only show these user fields
-
-    user = UserSerializer(read_only=True)  # Use the nested serializer for the user field
+            fields = ['username', 'email']
+    user = UserSerializer(read_only=True)
     final_score = serializers.IntegerField(source='results.final_score', read_only=True, allow_null=True)
 
     class Meta:
@@ -59,7 +57,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfiles
         fields = '__all__'
-
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,3 +102,9 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answers
         fields = ['id', 'question_id', 'answer']
+
+class UserProfilesSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = UserProfiles
+        fields = ['user', 'full_name', 'date_of_birth', 'sex', 'phone_number']

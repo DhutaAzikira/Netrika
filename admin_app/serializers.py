@@ -52,11 +52,8 @@ class SystemSettingSerializer(serializers.ModelSerializer):
         model = SystemSetting
         fields = ['key', 'value']
 
+
 class DashboardMetricsSerializer(serializers.Serializer):
-    """
-    Serializer for the main dashboard KPI cards. This is not a ModelSerializer
-    as it aggregates data from multiple sources.
-    """
     daily_active_users = serializers.IntegerField()
     dau_percentage_change = serializers.FloatField()
     monthly_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
@@ -64,24 +61,18 @@ class DashboardMetricsSerializer(serializers.Serializer):
     active_subscriptions = serializers.IntegerField()
     subscriptions_percentage_change = serializers.FloatField()
 
+
 class UserGrowthSerializer(serializers.Serializer):
-    """
-    Serializer for a single data point in the user growth chart.
-    """
     period = serializers.DateField()
     new_users = serializers.IntegerField()
     total_users = serializers.IntegerField()
 
+
 class PackageDistributionSerializer(serializers.Serializer):
-    """
-    Serializer for package distribution data.
-    """
     package__name = serializers.CharField()
     count = serializers.IntegerField()
 
+
 class UserDemographicsSerializer(serializers.Serializer):
-    """
-    Serializer for demographics data (e.g., by age, gender).
-    """
     group = serializers.CharField()
     count = serializers.IntegerField()

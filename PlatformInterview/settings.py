@@ -25,13 +25,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '.ngrok-free.app',
-    '188.209.141.229',
-    '.netrikastag.dedyn.io',
-]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS','').split(',')
+
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS','').split(',')
 
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
 
@@ -56,6 +52,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'drf_spectacular',
     'django_filters',
+    'corsheaders',
 
     'platform_app',
     'pages',
@@ -120,6 +117,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'PlatformInterview.urls'
@@ -157,7 +155,7 @@ DATABASES = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": os.getenv('REDIS_BACKEND'),
         "LOCATION": os.getenv('REDIS_URL'), # Reads the URL from your .env file
     }
 }
