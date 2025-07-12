@@ -70,7 +70,32 @@ class SystemSettingsAPIView(APIView):
         responses={
             200: inline_serializer(
                 name='SystemSettingsGetResponse',
-                fields={'some_key': serializers.CharField(default='some_value')}
+                fields={
+                    "ai_coach_enabled": serializers.BooleanField(),
+                    "failed_login_attempts_lockout": serializers.IntegerField(),
+                    "free_tier_sessions_per_month": serializers.IntegerField(),
+                    "login_method_email_password_enabled": serializers.BooleanField(),
+                    "login_method_google_oauth_enabled": serializers.BooleanField(),
+                    "login_method_linkedin_oauth_enabled": serializers.BooleanField(),
+                    "maintenance_mode": serializers.BooleanField(),
+                    "max_active_sessions": serializers.IntegerField(),
+                    "max_session_duration_minutes": serializers.IntegerField(),
+                    "password_expires_after_days": serializers.IntegerField(),
+                    "password_expiry_warning_days": serializers.IntegerField(),
+                    "password_min_length": serializers.IntegerField(),
+                    "password_require_number": serializers.BooleanField(),
+                    "password_require_special_char": serializers.BooleanField(),
+                    "password_require_uppercase": serializers.BooleanField(),
+                    "platform_name": serializers.CharField(),
+                    "platform_url": serializers.URLField(),
+                    "premium_sessions_per_month": serializers.IntegerField(),
+                    "remember_me_duration_days": serializers.IntegerField(),
+                    "session_timeout_minutes": serializers.IntegerField(),
+                    "support_email": serializers.EmailField(),
+                    "timezone": serializers.CharField(),
+                    "user_registration_enabled": serializers.BooleanField(),
+                    "video_recording_enabled": serializers.BooleanField()
+                }
             )
         }
     )
@@ -81,17 +106,40 @@ class SystemSettingsAPIView(APIView):
 
     @extend_schema(
         summary="Update system settings",
-        description="Updates one or more system settings from a key-value JSON object.",
+        description="Updates one or more system settings and returns the complete, updated set of all settings.",
         request=inline_serializer(
             name='SystemSettingsPutRequest',
             fields={'some_key': serializers.CharField(default='new_value')}
         ),
-        responses={
-            200: inline_serializer(
-                name='SystemSettingsPutResponse',
-                fields={'message': serializers.CharField()}
-            )
-        }
+        responses={200: inline_serializer(
+            name='SystemSettingsPutResponse',
+            fields={
+                "ai_coach_enabled": serializers.BooleanField(),
+                "failed_login_attempts_lockout": serializers.IntegerField(),
+                "free_tier_sessions_per_month": serializers.IntegerField(),
+                "login_method_email_password_enabled": serializers.BooleanField(),
+                "login_method_google_oauth_enabled": serializers.BooleanField(),
+                "login_method_linkedin_oauth_enabled": serializers.BooleanField(),
+                "maintenance_mode": serializers.BooleanField(),
+                "max_active_sessions": serializers.IntegerField(),
+                "max_session_duration_minutes": serializers.IntegerField(),
+                "password_expires_after_days": serializers.IntegerField(),
+                "password_expiry_warning_days": serializers.IntegerField(),
+                "password_min_length": serializers.IntegerField(),
+                "password_require_number": serializers.BooleanField(),
+                "password_require_special_char": serializers.BooleanField(),
+                "password_require_uppercase": serializers.BooleanField(),
+                "platform_name": serializers.CharField(),
+                "platform_url": serializers.URLField(),
+                "premium_sessions_per_month": serializers.IntegerField(),
+                "remember_me_duration_days": serializers.IntegerField(),
+                "session_timeout_minutes": serializers.IntegerField(),
+                "support_email": serializers.EmailField(),
+                "timezone": serializers.CharField(),
+                "user_registration_enabled": serializers.BooleanField(),
+                "video_recording_enabled": serializers.BooleanField()
+            }
+        )}
     )
     def put(self, request, *args, **kwargs):
         for key, value in request.data.items():
@@ -100,7 +148,11 @@ class SystemSettingsAPIView(APIView):
                 defaults={'value': value}
             )
             cache.delete(f'setting_{key}')
-        return Response({"message": "Settings updated successfully"}, status=status.HTTP_200_OK)
+
+        settings_qs = SystemSetting.objects.all()
+        settings_dict = {setting.key: setting.value for setting in settings_qs}
+
+        return Response(settings_dict, status=status.HTTP_200_OK)
 
 
 @extend_schema(
