@@ -37,13 +37,7 @@ class Interviews(models.Model):
     date = models.DateField(blank=True, null=True)
     schedule = models.ForeignKey(Schedules, on_delete=models.DO_NOTHING, blank=True, null=True)
     booking_code = models.CharField(max_length=20, blank=True, null=True)
-
-    class TierPlan (models.TextChoices):
-        FREE = 'Free', 'Free'
-        BASIC = 'Basic', 'Basic'
-        PREMIUM = 'Premium', 'Premium'
-
-    tier = models.CharField(max_length=10, choices=TierPlan, default=TierPlan.FREE)
+    package = models.ForeignKey('admin_app.Packages', on_delete=models.DO_NOTHING, blank=True, null=True)
 
     class StatusField(models.TextChoices):
         PENDING = 'Pending', 'Pending'
