@@ -282,8 +282,8 @@ class UserProfileAPIView(APIView):
                 'email': serializers.EmailField(required=True),
                 'date_of_birth': serializers.DateField(required=True),
                 'gender': serializers.ChoiceField(choices=['Laki-laki', 'Perempuan'], required=True),
-                'profile_picture': serializers.ImageField(required=False, allow_null=True,allow_blank=True),
-                'bio': serializers.CharField(required=False, allow_blank=True,allow_null=True, max_length=500)
+                'profile_picture': serializers.ImageField(required=False, allow_null=True),
+                'bio': serializers.CharField(required=False, allow_blank=True, max_length=500)
             },
         ),
         responses={
