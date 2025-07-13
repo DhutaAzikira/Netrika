@@ -651,10 +651,6 @@ components:
         id:
           type: integer
           readOnly: true
-        email:
-          type: string
-          format: email
-          maxLength: 254
         full_name:
           type: string
           nullable: true
