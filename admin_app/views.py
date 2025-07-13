@@ -42,7 +42,7 @@ class TransactionViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = Transactions.objects.select_related('user_profile', 'package').all()
     serializer_class = TransactionSerializer
-    filterset_fields = ['status', 'user_profile__email', 'package__name']
+    filterset_fields = ['status', 'package__name']
     http_method_names = ['get', 'head', 'options'] # Read-only
 
 
@@ -54,7 +54,7 @@ class SubscriptionViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = Subscriptions.objects.select_related('user_profile', 'package').all()
     serializer_class = SubscriptionSerializer
-    filterset_fields = ['is_active', 'user_profile__email', 'package__name']
+    filterset_fields = ['is_active', 'package__name']
 
 
 @extend_schema(tags=["Admin: System Settings"])

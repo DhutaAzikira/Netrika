@@ -145,7 +145,6 @@ def interviews_api(request):
     try:
         user_profile = UserProfiles.objects.get(user=user)
         interviews = Interviews.objects.filter(user_profile=user_profile)
-
         serializer = InterviewSerializer(interviews, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -377,7 +376,6 @@ def dashboard_data_api(request):
         'username': user.username,
         'full_name': user_profile.full_name,
         'phone_number': user_profile.phone_number,
-        'email': user_profile.email,
         'date_of_birth': user_profile.date_of_birth,
         'gender': user_profile.gender,
         'interviews': interview_serializer.data
