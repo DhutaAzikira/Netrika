@@ -667,7 +667,7 @@ components:
           type: string
           format: date
           nullable: true
-        sex:
+        gender:
           type: string
           nullable: true
           maxLength: 10

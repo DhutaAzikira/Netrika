@@ -274,8 +274,8 @@ class UserDemographicsAPIView(APIView):
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'gender').lower()
         if group_by == 'gender':
-            queryset = UserProfiles.objects.values('sex') \
-                .annotate(group=Value('sex'), count=Count('id')) \
+            queryset = UserProfiles.objects.values('gender') \
+                .annotate(group=Value('gender'), count=Count('id')) \
                 .values('group', 'count')
         elif group_by == 'age':
             today = timezone.now().date()

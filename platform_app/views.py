@@ -1,4 +1,6 @@
 import os
+import random
+
 import requests
 from datetime import datetime
 from django.db.models import Count, F, Q, Avg
@@ -6,13 +8,13 @@ from django.http import Http404
 from google.genai import types
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from rest_framework.views import APIView
 from .schemas import GoogleLoginSchema, RegisterSchema, SubmitScreenerSchema, UserProfileSchema, UpdateProfileSchema, \
     InterviewsSchema, GetAvailableScheduleSchema, CameraAnalysisSchema, StartResultSchema, GetResultSchema, \
@@ -272,7 +274,18 @@ class UserProfileAPIView(APIView):
     @extend_schema(
         summary="Create User Profile",
         description="Creates a profile for the currently authenticated user. A user can only have one profile.",
-        request=UserProfilesSerializer,
+        request=inline_serializer(
+            name='UserProfileCreateSerializer',
+            fields={
+                'full_name': serializers.CharField(required=True, max_length=255),
+                'phone_number': serializers.CharField(required=True, max_length=15),
+                'email': serializers.EmailField(required=True),
+                'date_of_birth': serializers.DateField(required=True),
+                'gender': serializers.ChoiceField(choices=['Laki-laki', 'Perempuan'], required=True),
+                'profile_picture': serializers.ImageField(required=False, allow_null=True,allow_blank=True),
+                'bio': serializers.CharField(required=False, allow_blank=True,allow_null=True, max_length=500)
+            },
+        ),
         responses={
             201: UserProfilesSerializer,
             400: OpenApiResponse(description="Invalid data provided or a profile for this user already exists."),
@@ -284,10 +297,12 @@ class UserProfileAPIView(APIView):
                 {"error": "Profile already exists."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         serializer = UserProfilesSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+            random_suffix = str(random.randint(100, 999))
+            unique_id = f"{current_time}{random_suffix}"
+            serializer.save(user=request.user, id=unique_id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -364,7 +379,7 @@ def dashboard_data_api(request):
         'phone_number': user_profile.phone_number,
         'email': user_profile.email,
         'date_of_birth': user_profile.date_of_birth,
-        'sex': user_profile.sex,
+        'gender': user_profile.gender,
         'interviews': interview_serializer.data
     }
 
