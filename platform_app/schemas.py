@@ -49,23 +49,49 @@ GoogleLoginSchema = {
     }
 }
 
+from rest_framework import serializers
+from drf_spectacular.utils import OpenApiResponse, inline_serializer
+
 RegisterSchema = {
     "tags": ["User: Authentication & Onboarding"],
     "summary": "User Registration",
-    "description": "Registers a new user with a username, email, and password.",
+    "description": "Registers a new user with a username, email, and password. On success, it returns the user's details and an authentication token.",
     "request": inline_serializer(
         name='RegisterRequest',
         fields={
             'username': serializers.CharField(),
-            'password': serializers.CharField(),
+            'password': serializers.CharField(write_only=True), # Password should not be readable
             'email': serializers.EmailField(),
         }
     ),
     "responses": {
-        201: OpenApiResponse(description="User created successfully"),
-        400: OpenApiResponse(description="Invalid data provided"),
+        201: OpenApiResponse(
+            description="User created successfully. The response includes user details and an auth token.",
+            response=inline_serializer(
+                name='RegisterSuccessResponse',
+                fields={
+                    'message': serializers.CharField(),
+                    'user': inline_serializer(
+                        name='RegisteredUser',
+                        fields={
+                            'username': serializers.CharField(),
+                            'email': serializers.EmailField(),
+                        }
+                    ),
+                    'token': serializers.CharField(),
+                }
+            )
+        ),
+        400: OpenApiResponse(
+            description="Invalid data provided (e.g., username already exists, invalid email).",
+            response=inline_serializer(
+                name='RegisterErrorResponse',
+                fields={
+                    'field_name': serializers.ListField(child=serializers.CharField())
+                }
+            )
+        ),
     }
-
 }
 
 """
