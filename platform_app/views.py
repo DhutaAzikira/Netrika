@@ -6,6 +6,7 @@ from datetime import datetime
 from django.db.models import Count, F, Q, Avg
 from django.http import Http404
 from google.genai import types
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status, serializers
@@ -40,13 +41,16 @@ def register_api(request):
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
+        token, created = Token.objects.get_or_create(user=user)
         return Response({
             "message": "User created successfully",
             "user": {
                 "username": user.username,
                 "email": user.email
-            }
+            },
+            "token": token.key  # Return the token's key
         }, status=status.HTTP_201_CREATED)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
