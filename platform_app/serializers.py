@@ -1,3 +1,4 @@
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from platform_app.models import Interviews, Schedules, UserProfiles, Results, Questions, Answers
 from rest_framework import serializers, validators
@@ -59,10 +60,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserDetailsSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = get_user_model()
-        fields = ('pk', 'username', 'email', 'first_name', 'last_name')
+        fields = ('pk', 'username', 'email', 'first_name', 'last_name', 'profile_picture')
         read_only_fields = ('email',)
+
+    def get_profile_picture(self, obj):
+        try:
+            # Find the user's social account (specifically Google)
+            social_account = SocialAccount.objects.get(user=obj, provider='google')
+            # Return the picture URL from the 'extra_data' dictionary
+            return social_account.extra_data.get('picture')
+        except SocialAccount.DoesNotExist:
+            # If the user has no Google account linked (e.g., registered
+            # with email), return None.
+            return None
 
 
 class CustomTokenSerializer(serializers.ModelSerializer):
