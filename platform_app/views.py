@@ -74,7 +74,7 @@ def submit_screener_api(request):
     tingkatan = request.data.get('tingkatan')
     jenis_wawancara = request.data.get('jenis_wawancara')
     detail_pekerjaan = request.data.get('detail_pekerjaan')
-    tier = request.data.get('tier', 'Free')
+    package = request.data.get('package')
 
     n8n_data_payload = {
         'user_profile_id': user_profile.id,
@@ -86,7 +86,7 @@ def submit_screener_api(request):
         'tingkatan': tingkatan,
         'jenis_wawancara': jenis_wawancara,
         'detail_pekerjaan': detail_pekerjaan,
-        'tier': tier,
+        'package': package,
     }
 
     if any(value is None or value == '' for key, value in n8n_data_payload.items()
