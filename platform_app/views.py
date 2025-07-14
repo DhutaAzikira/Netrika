@@ -302,9 +302,11 @@ class UserProfileAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer = UserProfilesSerializer(data=request.data)
+        serializer.is_valid()
+        print("serializer valid", serializer.is_valid())
         print("serializer validated data", serializer.validated_data)
         print("serializer data", serializer.data)
-        print("serializer valid", serializer.is_valid())
+
         print("request user", request.user)
         if serializer.is_valid():
             print("serializer validated data",serializer.validated_data)
