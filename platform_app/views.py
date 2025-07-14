@@ -302,7 +302,13 @@ class UserProfileAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer = UserProfilesSerializer(data=request.data)
+        print("serializer validated data", serializer.validated_data)
+        print("serializer data", serializer.data)
+        print("serializer valid", serializer.is_valid())
+        print("request user", request.user)
         if serializer.is_valid():
+            print("serializer validated data",serializer.validated_data)
+            print("request user", request.user)
             current_time = datetime.now().strftime('%Y%m%d%H%M%S')
             random_suffix = str(random.randint(100, 999))
             unique_id = f"{current_time}{random_suffix}"
