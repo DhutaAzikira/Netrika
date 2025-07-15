@@ -381,7 +381,7 @@ class CVScreeningAPIView(APIView):
             # Generate the unique ID string
             current_time = datetime.now().strftime('%Y%m%d%H%M%S')
             random_suffix = str(random.randint(100, 999))
-            unique_id = f"CVR-{current_time}-{random_suffix}"  # e.g., CVR-20250716010915-123
+            unique_id = f"{current_time}{random_suffix}"
 
             # Save the validated data, passing in the user and the custom id
             serializer.save(user=request.user, id=unique_id)
