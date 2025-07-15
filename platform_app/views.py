@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_seriali
 from rest_framework.views import APIView
 from .schemas import GoogleLoginSchema, RegisterSchema, SubmitScreenerSchema, UserProfileSchema, UpdateProfileSchema, \
     InterviewsSchema, GetAvailableScheduleSchema, CameraAnalysisSchema, StartResultSchema, GetResultSchema, \
-    GetAverageScoreSchema, DashboardDataSchema, GetSchedulesSchema, AnalyzeVideoSchema
+    GetAverageScoreSchema, DashboardDataSchema, GetSchedulesSchema, AnalyzeVideoSchema, CVScreeningSchema
 from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer, UserProfileSerializer, \
     AvailableScheduleSerializer, ResultSerializer, QuestionSerializer, AnswerSerializer, UserProfilesSerializer, \
     CVScreeningReportSerializer
@@ -347,7 +347,7 @@ class UserProfileAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(**CVScreeningSchema)
 @permission_classes([IsAuthenticated])
 class CVScreeningAPIView(APIView):
 
@@ -391,7 +391,11 @@ class CVScreeningAPIView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+@extend_schema(
+    tags=["User: CV Screening"],
+    summary="List All CV Screening Reports",
+    description="Retrieves a list of all previously generated CV screening reports for the authenticated user."
+)
 @permission_classes([IsAuthenticated])
 class CVScreeningReportListView(generics.ListAPIView):
     serializer_class = CVScreeningReportSerializer
@@ -399,7 +403,11 @@ class CVScreeningReportListView(generics.ListAPIView):
     def get_queryset(self):
         return CVScreeningReport.objects.filter(user=self.request.user).order_by('-created_at')
 
-
+@extend_schema(
+    tags=["User: CV Screening"],
+    summary="Retrieve a Specific CV Screening Report",
+    description="Fetches the details of a single CV screening report by its unique ID."
+)
 @permission_classes([IsAuthenticated])
 class CVScreeningReportDetailView(generics.RetrieveAPIView):
     serializer_class = CVScreeningReportSerializer

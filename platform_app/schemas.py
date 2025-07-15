@@ -3,7 +3,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiResponse, inline_serial
 from rest_framework import serializers
 
 from platform_app.serializers import InterviewSerializer, ResultSerializer, QuestionSerializer, AnswerSerializer, \
-    ScheduleSerializer, AvailableScheduleSerializer, UserProfileSerializer
+    ScheduleSerializer, AvailableScheduleSerializer, UserProfileSerializer, CVScreeningReportSerializer
 
 """
 # ===================================================================
@@ -289,5 +289,27 @@ AnalyzeVideoSchema = {
     "responses": {
         200: OpenApiResponse(response={"type": "object", "properties": {"summary": {"type": "string"}}}),
         400: OpenApiResponse(description="Invalid input."),
+    }
+}
+
+CVScreeningSchema = {
+    "tags": ["User: CV Screening"],
+    "summary": "Submit CV for Screening",
+    "description": "Uploads a CV file for AI analysis. The system processes it synchronously and returns a detailed screening report.",
+    "request": {
+        'multipart/form-data': {
+            'type': 'object',
+            'properties': {
+                'cv': {'type': 'string', 'format': 'binary'}
+            },
+            'required': ['cv']
+        }
+    },
+    "responses": {
+        201: CVScreeningReportSerializer,
+        400: OpenApiResponse(description="No CV file was provided."),
+        502: OpenApiResponse(description="Bad Gateway: The AI analysis service returned an error."),
+        504: OpenApiResponse(description="Gateway Timeout: The AI analysis service could not be reached."),
+        500: OpenApiResponse(description="Internal Server Error: The data returned by the AI service was invalid."),
     }
 }
