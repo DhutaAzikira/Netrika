@@ -358,7 +358,7 @@ class CVScreeningAPIView(APIView):
 
         # --- Call n8n Synchronously using requests ---
         n8n_webhook_url = os.getenv('N8N_CV_SCREENER_URL')
-        files = {'file': (cv_file.name, cv_file.read(), cv_file.content_type)}
+        files = {'cv': (cv_file.name, cv_file.read(), cv_file.content_type)}
 
         current_time = datetime.now().strftime('%Y%m%d%H%M%S')
         random_suffix = str(random.randint(100, 999))
