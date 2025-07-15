@@ -360,11 +360,12 @@ class CVScreeningAPIView(APIView):
         n8n_webhook_url = os.getenv('N8N_CV_SCREENER_URL')
         files = {'file': (cv_file.name, cv_file.read(), cv_file.content_type)}
 
-        if cv_file:
-            return Response("CV is ready")
+        current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+        random_suffix = str(random.randint(100, 999))
+        unique_id = f"CVR-{current_time}-{random_suffix}"
 
         try:
-            response = requests.post(n8n_webhook_url, files=files, timeout=60)  # 60-second timeout
+            response = requests.post(n8n_webhook_url,json={"id":unique_id}, files=files, timeout=90)  # 60-second timeout
             response.raise_for_status()  # Raises an exception for 4xx/5xx errors
             n8n_data = response.json()
 
