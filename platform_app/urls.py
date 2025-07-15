@@ -37,6 +37,10 @@ urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('profile/', views.UserProfileAPIView.as_view(), name='profile-api'),
 
+    path('cv-screening/', views.CVScreeningAPIView.as_view(), name='cv-screening-api'),
+    path('cv-screening/report/', views.CVScreeningReportListView.as_view(), name='cv-screening-report-api'),
+    path('cv-screening/report/<int:pk>', views.CVScreeningReportDetailView.as_view(), name='cv-screening-report-detail-api'),
+
     # Optional UI:
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),

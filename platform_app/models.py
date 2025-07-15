@@ -154,3 +154,41 @@ class CameraAnalysis(models.Model):
 
     class Meta:
         db_table = 'camera_analysis'
+
+
+class CVScreeningReport(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    # Personal and Position Info
+    full_name = models.CharField(max_length=255)
+    position = models.CharField(max_length=255)
+    score = models.IntegerField()
+
+    # Sub-scores
+    format_and_structure_score = models.IntegerField()
+    suitability_score = models.IntegerField()
+    experiences_score = models.IntegerField()
+
+    # Score Breakdown
+    profile_summary_score = models.IntegerField()
+    work_experience_score = models.IntegerField()
+    education_score = models.IntegerField()
+    skills_score = models.IntegerField()
+    certifications_score = models.IntegerField()
+    projects_score = models.IntegerField()
+    achievements_score = models.IntegerField()
+
+    # SWOT Analysis
+    strengths = models.JSONField()
+    weaknesses = models.JSONField()
+    opportunities = models.JSONField()
+    threats = models.JSONField()
+
+    # Revisions/Recommendations
+    revisions = models.JSONField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'cv_screening_reports'

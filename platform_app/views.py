@@ -9,7 +9,7 @@ from google.genai import types
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
-from rest_framework import status, serializers
+from rest_framework import status, serializers, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -21,8 +21,9 @@ from .schemas import GoogleLoginSchema, RegisterSchema, SubmitScreenerSchema, Us
     InterviewsSchema, GetAvailableScheduleSchema, CameraAnalysisSchema, StartResultSchema, GetResultSchema, \
     GetAverageScoreSchema, DashboardDataSchema, GetSchedulesSchema, AnalyzeVideoSchema
 from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer, UserProfileSerializer, \
-    AvailableScheduleSerializer, ResultSerializer, QuestionSerializer, AnswerSerializer, UserProfilesSerializer
-from .models import Interviews, Schedules, UserProfiles, Results, Questions, Answers
+    AvailableScheduleSerializer, ResultSerializer, QuestionSerializer, AnswerSerializer, UserProfilesSerializer, \
+    CVScreeningReportSerializer
+from .models import Interviews, Schedules, UserProfiles, Results, Questions, Answers, CVScreeningReport
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -345,6 +346,65 @@ class UserProfileAPIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@permission_classes([IsAuthenticated])
+class CVScreeningAPIView(APIView):
+
+    def post(self, request):
+        cv_file = request.FILES.get('cv')
+        if not cv_file:
+            return Response({"error": "No CV file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # --- Call n8n Synchronously using requests ---
+        n8n_webhook_url = os.getenv('N8N_CV_SCREENER_URL')
+        files = {'file': (cv_file.name, cv_file.read(), cv_file.content_type)}
+
+        if cv_file:
+            return Response("CV is ready")
+
+        try:
+            response = requests.post(n8n_webhook_url, files=files, timeout=60)  # 60-second timeout
+            response.raise_for_status()  # Raises an exception for 4xx/5xx errors
+            n8n_data = response.json()
+
+        except requests.exceptions.HTTPError as e:
+            return Response({"error": "Failed to get analysis from AI service.", "details": str(e)},
+                            status=status.HTTP_502_BAD_GATEWAY)
+        except requests.exceptions.RequestException as e:
+            return Response({"error": "Network error while contacting AI service.", "details": str(e)},
+                            status=status.HTTP_504_GATEWAY_TIMEOUT)
+
+        serializer = CVScreeningReportSerializer(data=n8n_data)
+        if serializer.is_valid():
+            # Generate the unique ID string
+            current_time = datetime.now().strftime('%Y%m%d%H%M%S')
+            random_suffix = str(random.randint(100, 999))
+            unique_id = f"CVR-{current_time}-{random_suffix}"  # e.g., CVR-20250716010915-123
+
+            # Save the validated data, passing in the user and the custom id
+            serializer.save(user=request.user, id=unique_id)
+
+            # We return the serializer's data, which now includes the new ID
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@permission_classes([IsAuthenticated])
+class CVScreeningReportListView(generics.ListAPIView):
+    serializer_class = CVScreeningReportSerializer
+
+    def get_queryset(self):
+        return CVScreeningReport.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+@permission_classes([IsAuthenticated])
+class CVScreeningReportDetailView(generics.RetrieveAPIView):
+    serializer_class = CVScreeningReportSerializer
+
+    def get_queryset(self):
+        return CVScreeningReport.objects.filter(user=self.request.user)
 
 
 """
