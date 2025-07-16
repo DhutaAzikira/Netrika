@@ -143,6 +143,7 @@ class UserProfilesSerializer(serializers.ModelSerializer):
 
 
 class CVScreeningReportSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
     class Meta:
         model = CVScreeningReport
         # Exclude fields that are handled automatically
