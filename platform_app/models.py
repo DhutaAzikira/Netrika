@@ -179,6 +179,7 @@ class CVScreeningReport(models.Model):
     projects_score = models.IntegerField()
     achievements_score = models.IntegerField()
 
+    summary = models.TextField(default='', blank=True)
     # SWOT Analysis
     strengths = models.JSONField()
     weaknesses = models.JSONField()
