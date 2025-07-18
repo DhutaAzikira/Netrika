@@ -35,7 +35,7 @@ class Interviews(models.Model):
     user_profile = models.ForeignKey(UserProfiles, on_delete=models.DO_NOTHING, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
     schedule = models.ForeignKey(Schedules, on_delete=models.DO_NOTHING, blank=True, null=True)
-    booking_code = models.CharField(max_length=20, blank=True, null=True)
+    booking_code = models.CharField(max_length=25, blank=True, null=True)
     package = models.ForeignKey('admin_app.Packages', on_delete=models.DO_NOTHING, blank=True, null=True)
 
     class StatusField(models.TextChoices):
