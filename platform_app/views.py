@@ -7,6 +7,7 @@ from django.db.models import Count, F, Q, Avg
 from django.http import Http404
 from google.genai import types
 from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import status, serializers, generics
@@ -22,7 +23,7 @@ from .schemas import GoogleLoginSchema, RegisterSchema, SubmitScreenerSchema, Us
     GetAverageScoreSchema, DashboardDataSchema, GetSchedulesSchema, AnalyzeVideoSchema, CVScreeningSchema
 from .serializers import RegisterSerializer, InterviewSerializer, ScheduleSerializer, UserProfileSerializer, \
     AvailableScheduleSerializer, ResultSerializer, QuestionSerializer, AnswerSerializer, UserProfilesSerializer, \
-    CVScreeningReportSerializer
+    CVScreeningReportSerializer, CustomTokenSerializer
 from .models import Interviews, Schedules, UserProfiles, Results, Questions, Answers, CVScreeningReport
 from dotenv import load_dotenv
 
@@ -33,6 +34,31 @@ load_dotenv()
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     client_class = OAuth2Client
+
+
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        if user.is_staff:
+            return Response({
+                'token': token.key,
+                'is_staff': user.is_staff,
+            })
+        else:
+            return Response({
+                'token': token.key,
+            })
+        # Here's our custom part
+        # token, created = Token.objects.get_or_create(user=user)
+        #
+        # token_serializer = CustomTokenSerializer(instance=token, context={'request': request})
+        #
+        # return Response(token_serializer.data)
 
 
 @extend_schema(**RegisterSchema)
@@ -347,6 +373,7 @@ class UserProfileAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @extend_schema(**CVScreeningSchema)
 @permission_classes([IsAuthenticated])
 class CVScreeningAPIView(APIView):
@@ -365,7 +392,8 @@ class CVScreeningAPIView(APIView):
         unique_id = f"CVR-{current_time}-{random_suffix}"
 
         try:
-            response = requests.post(n8n_webhook_url,json={"id":unique_id}, files=files, timeout=90)  # 60-second timeout
+            response = requests.post(n8n_webhook_url, json={"id": unique_id}, files=files,
+                                     timeout=90)  # 60-second timeout
             response.raise_for_status()  # Raises an exception for 4xx/5xx errors
             n8n_data = response.json()
 
@@ -391,6 +419,7 @@ class CVScreeningAPIView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 @extend_schema(
     tags=["User: CV Screening"],
     summary="List All CV Screening Reports",
@@ -402,6 +431,7 @@ class CVScreeningReportListView(generics.ListAPIView):
 
     def get_queryset(self):
         return CVScreeningReport.objects.filter(user=self.request.user).order_by('-created_at')
+
 
 @extend_schema(
     tags=["User: CV Screening"],

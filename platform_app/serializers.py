@@ -64,7 +64,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ('pk', 'username', 'email', 'first_name', 'last_name', 'profile_picture')
+        fields = ('pk', 'username', 'email', 'first_name', 'last_name', 'profile_picture', 'is_staff')
         read_only_fields = ('email',)
 
     def get_profile_picture(self, obj):
@@ -81,10 +81,11 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
 class CustomTokenSerializer(serializers.ModelSerializer):
     user = UserDetailsSerializer(read_only=True)
+    token = serializers.CharField(source='key')
 
     class Meta:
         model = TokenModel
-        fields = ('key', 'user')
+        fields = ('token', 'user')
 
 
 class AvailableScheduleSerializer(serializers.ModelSerializer):

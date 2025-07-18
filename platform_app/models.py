@@ -165,6 +165,8 @@ class CVScreeningReport(models.Model):
     position = models.CharField(max_length=255)
     score = models.IntegerField()
 
+    grammar = models.JSONField(default='', blank=True)
+
     # Sub-scores
     format_and_structure_score = models.IntegerField()
     suitability_score = models.IntegerField()

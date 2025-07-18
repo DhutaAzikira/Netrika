@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from PlatformInterview import settings
 from . import views
-from platform_app.views import GoogleLogin
+from platform_app.views import GoogleLogin, CustomAuthToken
 from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
@@ -20,7 +20,7 @@ urlpatterns = [
     path ('admin/', include('admin_app.urls')),
     path('auth/google/', GoogleLogin.as_view(), name='google_login'),
     path('register/', views.register_api, name='register-api'),
-    path('login/', obtain_auth_token, name='login-api'),
+    path('login/', CustomAuthToken.as_view(), name='login-api'),
     path('submit-screener/', views.submit_screener_api, name='submit-screener-api'),
     path('dashboard-data/', views.dashboard_data_api, name='dashboard-data-api'),
     path('user-profile/', views.user_profile_api, name='user-profile-api'),
