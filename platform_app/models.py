@@ -166,6 +166,7 @@ class CVScreeningReport(models.Model):
     score = models.IntegerField()
 
     grammar = models.JSONField(default='', blank=True)
+    score_justification = models.TextField(default='', blank=True)
 
     # Sub-scores
     format_and_structure_score = models.IntegerField()
